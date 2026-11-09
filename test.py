@@ -1,5 +1,5 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 import torch
 from torch.utils.data import DataLoader
 import logging
@@ -10,15 +10,7 @@ import argparse
 import lpips
 from skimage.metrics import structural_similarity
 import numpy as np
-# from DCUNet import Main_unrolling as Net
-# from model.ISRNet import get_model as Net
-from model.laformer_lf import get_model as Net
-# from model.Net import get_model as Net
-# from model.EPIT import get_model as Net
-# from bioir_lf import get_model as Net
-
-# from Ablation.wo_mamba import get_model as Net
-# from model.Net_newpr import get_model as Net
+from Net import get_model as Net
 import re
 # from OursNet import MainSAST_unrolling as Net
 # from LFCID.CIDNet import CIDNet as Net
@@ -56,22 +48,14 @@ parser.add_argument("--savePath", type=str, default='./results/', help="Path for
 parser.add_argument("--angular_in", type=int, default=5, help="angular resolution")
 parser.add_argument("--angular_out", type=int, default=5, help="angular resolution")
 parser.add_argument("--factor", type=int, default=2, help="upscale factor")
-parser.add_argument('--cora_sec_score_mode', type=str,
-    default='full',
-    choices=[
-        'sim_only',
-        'sim_rel',
-        'sim_deg',
-        'full'
-    ]
-)
+
 
 opt = parser.parse_known_args()[0]
 
 warnings.filterwarnings("ignore")
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 log = logging.getLogger()
-fh = logging.FileHandler('ISRNet_wo_mohu_mix2__test.log')
+fh = logging.FileHandler('Net_mix2__test.log')
 log.addHandler(fh)
 
 lf_dataset = LFDataset(opt)
@@ -84,19 +68,17 @@ model=Net(opt)
 
 ckpts = []
 
-# 先收集所有 checkpoint： (epoch, path)
 for root, dirs, files in os.walk(opt.modelPath):
     for file in files:
-        # 只匹配你这种命名：model_epoch_XXXX.pth
+    
         m = re.match(r'model_epoch_(\d+)\.pth$', file)
         if not m:
             continue
 
-        epoch = int(m.group(1))          # '0100' -> 100, '10000' -> 10000
+        epoch = int(m.group(1))         
         path = os.path.join(root, file)
         ckpts.append((epoch, path))
 
-# 按 epoch 数字排序
 ckpts.sort(key=lambda x: x[0])
 
 for e, p in ckpts:
